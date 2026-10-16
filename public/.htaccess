@@ -1,0 +1,10 @@
+# For Apache shared hosting (server mode). Keep the data folder OUTSIDE the web root.
+Options -Indexes
+<FilesMatch "^(\.|config\.php$)">
+  Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "same-origin"
+</IfModule>

@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Free invoices for freelancers and small businesses in Germany and the EU, with the right VAT note picked automatically and XRechnung export.">
+<title>Invoice – free invoice generator with XRechnung export</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css?v=4">
+</head>
+<body>
+
+<nav id="siteStrip" class="site-strip" hidden></nav>
+
+<div id="login" class="login" hidden>
+  <form class="login-card" id="loginForm">
+    <img src="assets/icon.svg" alt="" width="48" height="48">
+    <h1>Invoice</h1>
+    <label>User <input id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label>Password <input type="password" id="loginPw" autocomplete="current-password" required></label>
+    <button class="btn primary" type="submit">Sign in</button>
+    <p class="err" id="loginErr"></p>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="brand"><img src="assets/icon.svg" alt="" width="26" height="26"> Invoice</div>
+    <nav class="tabs" id="tabs">
+      <button data-view="editor" class="on">New invoice</button>
+      <button data-view="history">Invoices</button>
+      <button data-view="parties">Senders &amp; clients</button>
+      <button data-view="items">Catalogue</button>
+      <button data-view="settings">Backup</button>
+    </nav>
+    <div class="top-right"><span id="whoami" class="sync"></span><span id="syncState" class="sync"></span><button class="btn ghost sm" id="logoutBtn" hidden>Sign out</button></div>
+  </header>
+  <div id="localNote" class="local-note" hidden><span id="localNoteText"></span> <button type="button" class="linkish" data-goto="settings" id="localNoteBtn">Backup</button></div>
+
+  <!-- EDITOR -->
+  <main id="view-editor" class="view editor">
+    <section class="form" id="invForm">
+      <div class="card">
+        <div class="row2">
+          <label>From (supplier)
+            <div class="pick"><select id="f-sender"></select><button class="btn sm" data-new-party="sender" title="New sender">＋</button></div>
+          </label>
+          <label>To (client)
+            <div class="pick"><select id="f-recipient"></select><button class="btn sm" data-new-party="recipient" title="New client">＋</button></div>
+          </label>
+        </div>
+        <div class="row3">
+          <label>Document
+            <select id="f-docType">
+              <option value="invoice">Invoice</option>
+              <option value="proforma">Pro-forma invoice</option>
+              <option value="quote">Quotation</option>
+              <option value="credit_note">Credit note / correction</option>
+              <option value="self_billing">Self-billing (Gutschrift)</option>
+            </select>
+          </label>
+          <label>Language <select id="f-lang"></select></label>
+          <label>Start from
+            <select id="f-template"><option value="">— blank —</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row3">
+          <label>Number <div class="pick"><input id="f-number"><button class="btn sm" id="regenNo" title="Next free number">↻</button></div></label>
+          <label>Date <input type="date" id="f-date"></label>
+          <label>Payment term
+            <select id="f-dueDays">
+              <option value="0">Immediately</option><option value="7">7 days</option><option value="10">10 days</option>
+              <option value="14">14 days</option><option value="30">30 days</option><option value="45">45 days</option><option value="60">60 days</option>
+            </select>
+          </label>
+        </div>
+        <div class="row3">
+          <label>Supply date
+            <select id="f-serviceMode">
+              <option value="same">Same as invoice date</option>
+              <option value="date">Specific date</option>
+              <option value="period">Period (from – to)</option>
+              <option value="month">Calendar month</option>
+            </select>
+          </label>
+          <label class="svc svc-date">Date of supply <input type="date" id="f-serviceDate"></label>
+          <label class="svc svc-period">From <input type="date" id="f-periodFrom"></label>
+          <label class="svc svc-period">To <input type="date" id="f-periodTo"></label>
+          <label class="svc svc-month">Month <input type="month" id="f-month"></label>
+        </div>
+        <div class="row3">
+          <label>Currency
+            <select id="f-currency"><option>EUR</option><option>USD</option><option>GBP</option><option>CHF</option><option>PLN</option><option>PKR</option><option>AED</option></select>
+          </label>
+          <label>Goods or services
+            <select id="f-supply"><option value="services">Services</option><option value="goods">Goods</option></select>
+          </label>
+          <label>Client reference / PO <input id="f-clientRef" placeholder="optional"></label>
+        </div>
+        <div class="row2 cn-only">
+          <label>Original invoice no. <input id="f-refNumber"></label>
+          <label>Original invoice date <input type="date" id="f-refDate"></label>
+        </div>
+        <label>VAT treatment <small id="treatHint" class="hint"></small>
+          <select id="f-treatment"></select>
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="lines-head">
+          <h3>Items</h3>
+          <div class="pick"><select id="f-catalogue"><option value="">＋ Add from catalogue…</option></select></div>
+        </div>
+        <div id="lines"></div>
+        <div class="lines-actions">
+          <button class="btn sm" id="addLine">＋ Empty line</button>
+          <label class="chk"><input type="checkbox" id="f-showDiscount"> Discount column</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Intro text <small class="hint">optional, above the items</small><textarea id="f-intro" rows="2"></textarea></label>
+        <label>Notes <small class="hint">optional, printed below totals</small><textarea id="f-notes" rows="2"></textarea></label>
+        <label class="chk"><input type="checkbox" id="f-showLogo" checked> Show logo</label>
+      </div>
+
+      <div class="card checks" id="checks"></div>
+
+      <div class="actions sticky">
+        <button class="btn" id="newInv">New</button>
+        <button class="btn" id="saveDraft">Save draft</button>
+        <button class="btn primary" id="issueInv">Issue &amp; save</button>
+        <button class="btn dark" id="printInv">PDF / Print</button>
+        <button class="btn" id="xmlInv" title="Download the issued invoice as XRechnung 3.0 (CII) XML">XRechnung (XML)</button>
+      </div>
+    </section>
+
+    <section class="preview-wrap">
+      <div class="preview-bar"><span id="previewTitle">Preview</span><span class="hint">A4 · exact print layout</span></div>
+      <div class="preview-scroll"><div id="sheetScale"><div id="sheet" class="sheet"></div></div></div>
+    </section>
+  </main>
+
+  <!-- HISTORY -->
+  <main id="view-history" class="view list" hidden>
+    <div class="list-head"><h2>Invoices</h2><input id="histSearch" placeholder="Search number, client, amount…"><select id="histFilter"><option value="">All</option><option value="draft">Drafts</option><option value="issued">Open</option><option value="paid">Paid</option></select><select id="histUser" hidden></select></div>
+    <div class="table-wrap"><table class="grid" id="histTable"></table></div>
+  </main>
+
+  <!-- PARTIES -->
+  <main id="view-parties" class="view list" hidden>
+    <div class="list-head"><h2>Senders &amp; clients</h2><button class="btn primary" data-new-party="any">＋ New</button></div>
+    <p class="hint">Every entry can be used as sender or client. Logos, bank details, tax IDs and numbering live here and fill the invoice automatically.</p>
+    <div id="partyList" class="cards"></div>
+  </main>
+
+  <!-- ITEMS -->
+  <main id="view-items" class="view list" hidden>
+    <div class="list-head"><h2>Catalogue</h2><button class="btn primary" id="newItem">＋ New item</button></div>
+    <p class="hint">Saved services and products for the "Add from catalogue" drop-down.</p>
+    <div class="table-wrap"><table class="grid" id="itemTable"></table></div>
+  </main>
+
+  <!-- SETTINGS -->
+  <main id="view-settings" class="view list" hidden>
+    <h2>Backup</h2>
+    <p id="backupText"></p>
+    <div class="actions"><button class="btn primary" id="exportJson">Download backup (.json)</button><label class="btn admin-only">Restore from file<input type="file" id="importJson" accept=".json" hidden></label></div>
+    <h2 class="admin-only" style="margin-top:28px">Demo data</h2>
+    <p class="hint admin-only">The demo entries (Muster GmbH, Jane Doe Design, …) are fictional. Remove them once you have added your own sender.</p>
+    <div class="actions admin-only"><button class="btn" id="demoLoad">Load demo data</button><button class="btn" id="demoRemove">Remove demo data</button><button class="btn ghost danger browser-only" id="wipeLocal">Delete all data in this browser</button></div>
+    <h2 style="margin-top:28px">E-invoices (XRechnung)</h2>
+    <p class="hint">"XRechnung (XML)" exports an issued invoice, credit note or self-billing invoice as XRechnung 3.0 in the UN/CEFACT CII syntax (EN 16931). It needs the sender's email, phone and IBAN and the client's email. For public-sector clients, enter their Leitweg-ID in the client record; otherwise the buyer reference is sent as "n/a". The XML is the legal invoice when you send it as an e-invoice; the PDF is a human-readable copy.</p>
+    <h2>About the compliance checks</h2>
+    <p class="hint">The checks follow § 14 / § 14a / § 19 UStG and § 35a GmbHG (Germany), Art.º 36.º CIVA and the certified-software rule (Portugal) and the EU VAT Directive 2006/112/EC (Art. 196, 226). They catch missing mandatory data and the wrong VAT treatment; they don't replace the tax adviser for special cases (construction § 13b, OSS, margin schemes, turnover limits). This tool is not tax advice.</p>
+  </main>
+</div>
+
+<!-- Party dialog -->
+<dialog id="partyDlg">
+  <form method="dialog" id="partyForm" class="dlg">
+    <h2 id="partyDlgTitle">Party</h2>
+    <div class="row3">
+      <label>Type
+        <select name="kind">
+          <option value="company">Company</option>
+          <option value="freelancer">Freelancer / self-employed</option>
+          <option value="private">Private person (consumer)</option>
+        </select>
+      </label>
+      <label>Country <select name="country" id="p-country"></select></label>
+      <label class="pt-only">Region (VAT rates)
+        <select name="ptRegion"><option value="">Mainland</option><option value="MA">Madeira</option><option value="AC">Azores</option></select>
+      </label>
+    </div>
+    <div class="row2">
+      <label>Name (as registered) <input name="name" required placeholder="e.g. Muster GmbH"></label>
+      <label>Short name (drop-down) <input name="short" placeholder="e.g. Muster"></label>
+    </div>
+    <div class="row2">
+      <label>Contact person / attn. <input name="contact"></label>
+      <label class="company-only">Legal form <input name="legalForm" placeholder="UG (haftungsbeschränkt) · Lda · Srl · Ltd"></label>
+    </div>
+    <label>Street <input name="street"></label>
+    <div class="row3">
+      <label>Postcode <input name="zip"></label>
+      <label>City <input name="city"></label>
+      <label>Address line 2 <input name="street2" placeholder="optional"></label>
+    </div>
+    <div class="row3">
+      <label>Email <input name="email" type="email"></label>
+      <label>Phone <input name="phone"></label>
+      <label>Website <input name="website"></label>
+    </div>
+
+    <fieldset class="biz-only">
+      <legend>Tax</legend>
+      <div class="row3">
+        <label>VAT ID <input name="vatId" placeholder="DE123456789 / PT123456789"></label>
+        <label>Tax number <input name="taxNo" placeholder="Steuernummer / NIF"></label>
+        <label>VAT status
+          <select name="vatScheme">
+            <option value="standard">Charges VAT (standard)</option>
+            <option value="small">Small business – no VAT (§ 19 UStG / Art. 53 CIVA)</option>
+            <option value="none">Not VAT registered</option>
+          </select>
+        </label>
+      </div>
+      <div class="row3 company-only">
+        <label class="de-only">Register court <input name="registerCourt" placeholder="Amtsgericht Berlin-Charlottenburg"></label>
+        <label class="de-only other-only">Register no. <input name="registerNo" placeholder="HRB 123456"></label>
+        <label class="de-only other-only">Managing director <input name="director"></label>
+        <label class="pt-only">Registry (Conservatória + no.) <input name="registry" placeholder="Lisboa – 123456789"></label>
+        <label class="pt-only">Share capital <input name="capital" placeholder="5.000,00 EUR"></label>
+        <label class="de-only">Registered seat <input name="seat" placeholder="Berlin"></label>
+      </div>
+      <label class="chk freelancer-only"><input type="checkbox" name="showDob"> Print date of birth (not recommended)</label>
+      <label class="freelancer-only dob">Date of birth <input name="dob" placeholder="only if a client insists"></label>
+    </fieldset>
+
+    <fieldset class="biz-only">
+      <legend>Bank (shown when this party sends an invoice)</legend>
+      <div class="row3">
+        <label>Bank <input name="bank"></label>
+        <label>IBAN <input name="iban"></label>
+        <label>BIC / SWIFT <input name="bic"></label>
+      </div>
+      <div class="row2">
+        <label>Account holder <input name="accountHolder" placeholder="defaults to name"></label>
+        <label>Bank address <input name="bankAddress" placeholder="optional"></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="biz-only">
+      <legend>When sending invoices</legend>
+      <div class="row3">
+        <label>Number format <input name="numberFormat" placeholder="RE-{YYYY}-{NNN}"><small class="hint">{YYYY} {YY} {MM} {NNN} {NN} {N}</small></label>
+        <label>Next number <input name="nextNumber" type="number" min="1"></label>
+        <label>Restart each year <select name="resetYearly"><option value="1">Yes</option><option value="0">No</option></select></label>
+      </div>
+      <div class="row3">
+        <label>Default language <select name="lang" id="p-lang"></select></label>
+        <label>Default payment term (days) <input name="dueDays" type="number" min="0"></label>
+        <label>Accent colour <input name="accent" type="color" value="#111111"></label>
+      </div>
+      <label>Default closing text <textarea name="closing" rows="2" placeholder="Vielen Dank für Ihren Auftrag."></textarea></label>
+      <div class="logo-row">
+        <div class="logo-box" id="logoBox">No logo</div>
+        <div>
+          <label class="btn sm">Upload logo<input type="file" id="logoFile" accept="image/*" hidden></label>
+          <button type="button" class="btn sm ghost" id="logoClear">Remove</button>
+          <p class="hint">PNG/SVG/JPG. Without a logo the name is printed as text.</p>
+        </div>
+      </div>
+    </fieldset>
+    <label class="chk admin-only"><input type="checkbox" name="adminOnly"> Only visible to admins (other users can't see or use this entry)</label>
+    <fieldset>
+      <legend>As a client</legend>
+      <div class="row3">
+        <label>Billing
+          <select name="billing" id="p-billing">
+            <option value="once">One-time – sender's series (RE-…)</option>
+            <option value="monthly">Monthly – own series (AB-…, XY-…)</option>
+          </select>
+        </label>
+        <label class="monthly-only">Client code <input name="clientCode" maxlength="6" placeholder="AB" style="text-transform:uppercase"></label>
+        <label class="monthly-only">Next running no. <input name="clientNext" type="number" min="1"><small class="hint">restarts at 1 each January</small></label>
+      </div>
+      <label class="monthly-only">Number format <input name="clientNumberFormat" placeholder="{CODE} {YYYY}/{MM}-{NN}"><small class="hint" id="p-numberPreview">client code · year · service month · running number</small></label>
+      <div class="row3">
+        <label>Customer no. <input name="customerNo" placeholder="optional"></label>
+        <label>Leitweg-ID / buyer reference <input name="leitwegId" placeholder="for XRechnung, e.g. public sector"></label>
+        <label>Internal note <input name="memo" placeholder="not printed"></label>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" class="btn ghost danger" id="partyDelete">Delete</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" id="partyCancel">Cancel</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Item dialog -->
+<dialog id="itemDlg">
+  <form method="dialog" id="itemForm" class="dlg narrow">
+    <h2>Catalogue item</h2>
+    <label>Description <input name="desc" required></label>
+    <label>Details (2nd line) <input name="details"></label>
+    <div class="row3">
+      <label>Unit <select name="unit" class="unit-select"></select></label>
+      <label>Price (net) <input name="price" type="number" step="0.01"></label>
+      <label>Code <input name="code" placeholder="optional"></label>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn ghost danger" id="itemDelete">Delete</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" id="itemCancel">Cancel</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast"></div>
+
+<script src="config.js?v=4"></script>
+<script src="i18n.js?v=4"></script>
+<script src="rules.js?v=4"></script>
+<script src="render.js?v=4"></script>
+<script src="xrechnung.js?v=4"></script>
+<script src="demo.js?v=4"></script>
+<script src="app.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+data/
+test-out/
+tools/.cache/
+.DS_Store
+.env
+public/config.php

@@ -1,0 +1,17 @@
+# Server mode (multi-user, data on the server). Copy .env.example to .env and set a password, then:
+#   docker compose up -d        ->  http://localhost:8080
+services:
+  invoice:
+    build: .
+    ports:
+      - "${INVOICE_PORT:-8080}:80"
+    environment:
+      INVOICE_ADMIN_USER: ${INVOICE_ADMIN_USER:-admin}
+      # at least 10 characters; leave empty to run the app in browser-only mode
+      INVOICE_ADMIN_PASSWORD: ${INVOICE_ADMIN_PASSWORD:-}
+    volumes:
+      - invoice-data:/data
+    restart: unless-stopped
+
+volumes:
+  invoice-data:
