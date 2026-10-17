@@ -67,12 +67,6 @@ The image is `php:8.3-apache`; data lives in the `invoice-data` volume mounted a
 tools/build-static.sh dist                # optional 2nd argument: your own config.js (see examples/)
 ```
 
-### Deploy to Hostinger
-
-[![Deploy to Hostinger](https://assets.hostinger.com/vps/deploy.svg)](https://www.hostinger.com/docker-hosting?compose_url=RAW_COMPOSE_URL&REFERRALCODE=REFERRAL_CODE)
-
-> TODO: `RAW_COMPOSE_URL` (raw URL of `docker-compose.yml`) and `REFERRAL_CODE` get filled in when the repository is public. One-click deploys only fetch the compose file, so `build: .` must then point to the public Git repository (`build: https://github.com/OWNER/REPO.git#main`) or to a published image.
-
 ## XRechnung
 
 - Syntax: UN/CEFACT Cross Industry Invoice D16B, specification identifier `urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0`, profile `urn:fdc:peppol.eu:2017:poacc:billing:01:1.0`.
