@@ -88,7 +88,9 @@
     return out;
   }
 
-  function render(inv, s, r) {
+  // opts.madeWith = { url } adds one small "Created with HMSK Invoice" line in the bottom margin
+  // (hosted copy only, opt-out in the app). It is positioned absolutely, so it never moves the layout.
+  function render(inv, s, r, opts = {}) {
     const lang = inv.lang || 'en';
     const L = makeL(lang);
     const pl = L.primary;
@@ -236,7 +238,14 @@
       ${selfBill ? '' : `<div class="iv-closing">${nl2br(issuer.closing || L('greeting'))}</div>`}
       <div class="iv-spacer"></div>
       <div class="iv-foot">${fcol(fcol1)}${fcol(fcol2)}${fcol(fcol3)}${fcol(fcol4)}</div>
+      ${madeWithLine(opts.madeWith, pl)}
     </div>`;
+  }
+
+  function madeWithLine(mw, lang) {
+    const url = mw && String(mw.url || '');
+    if (!url || !/^https?:\/\//i.test(url)) return '';
+    return `<div class="iv-made"><a href="${esc(url)}" target="_blank" rel="noopener">${esc(makeL(lang)('madeWith'))}</a></div>`;
   }
 
   function T_pt(key) { return I18N.T[key].pt; }

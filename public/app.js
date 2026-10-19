@@ -16,7 +16,9 @@
   const SERIES_PREFIX = { proforma: 'PF', quote: 'AN', credit_note: 'RK', self_billing: 'GS' };
 
   // ---------------------------------------------------------------- storage
-  const CONFIG = Object.assign({ storage: 'auto', topLinks: [] }, window.INVOICE_CONFIG || {});
+  const CONFIG = Object.assign({ storage: 'auto', topLinks: [], madeWith: null }, window.INVOICE_CONFIG || {});
+  // optional "Created with HMSK Invoice" footer line (config.js: madeWith.enabled); each user can switch it off
+  const MADE_WITH = CONFIG.madeWith && CONFIG.madeWith.enabled && /^https?:\/\//i.test(CONFIG.madeWith.url || '') ? { url: CONFIG.madeWith.url } : null;
   const UI_DE = /^de\b/i.test(navigator.language || '');
   const DB_KEY = 'invoice-db';
   let db = { rev: 0, parties: [], items: [], invoices: [], settings: {} };
@@ -96,6 +98,8 @@
     try { const r = await api('load'); if (ver === localVer) setDb(r); } catch (e) { if (e.status === 401) showLogin(); }
   }
   const draftKey = () => 'invoice-cur-' + me.user;
+  // stored as db.settings.showMadeWith; missing (older data and backups) means on
+  const showMadeWith = () => !!MADE_WITH && db.settings.showMadeWith !== false;
   function setSync(t) { $('#syncState').textContent = t; }
 
   // ---------------------------------------------------------------- helpers
@@ -323,7 +327,7 @@
 
   const update = debounce(() => {
     const [s, r] = partiesFor(cur);
-    $('#sheet').innerHTML = render(cur, s, r);
+    $('#sheet').innerHTML = render(cur, s, r, { madeWith: showMadeWith() ? MADE_WITH : null });
     fitPreview();
     renderChecks(s, r);
     $('#previewTitle').textContent = `${DOC_LABEL[cur.docType]} ${cur.number || ''} · ${cur.status}`;
@@ -793,7 +797,15 @@
   }
 
   // ---------------------------------------------------------------- backup
+  function syncMadeWith() {
+    $$('.made-only').forEach(el => el.hidden = !MADE_WITH);
+    $$('.mw-toggle').forEach(el => el.checked = showMadeWith());
+  }
   function bindBackup() {
+    $$('.mw-toggle').forEach(el => el.addEventListener('change', () => {
+      db.settings.showMadeWith = el.checked;
+      persist(); syncMadeWith(); update();
+    }));
     $('#exportJson').onclick = () => {
       download(`invoice-backup-${today()}.json`, JSON.stringify({ ...db, exportedAt: new Date().toISOString(), app: 'invoice' }, null, 2), 'application/json');
       try { localStorage.setItem('invoice-last-backup', today()); } catch {}
@@ -839,7 +851,7 @@
         if (!confirm(`Replace all current data with this backup (${data.parties.length} parties, ${data.invoices.length} invoices)?`)) return;
         setDb({ ...data, rev: db.rev });
         replaceNext = true;
-        persist(); toast('Backup restored'); cur = blankInvoice(); applyDefaults(); loadForm();
+        persist(); toast('Backup restored'); cur = blankInvoice(); applyDefaults(); loadForm(); syncMadeWith();
       } catch (err) { toast(err.message, true); }
       e.target.value = '';
     };
@@ -884,7 +896,7 @@
     try { restored = JSON.parse(localStorage.getItem(draftKey())); } catch {}
     cur = restored && restored.status === 'draft' ? restored : blankInvoice();
     if (!restored) applyDefaults();
-    loadForm();
+    loadForm(); syncMadeWith();
     setSync(mode === 'local' ? 'Saved in this browser' : 'Synced');
   }
 

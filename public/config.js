@@ -9,4 +9,9 @@ window.INVOICE_CONFIG = {
   // Optional links shown in a slim strip above the app, e.g.
   // [{ href: '/', text: { en: '← Home', de: '← Startseite' } }, { href: '/imprint/', text: 'Imprint' }]
   topLinks: [],
+
+  // Optional small "Created with HMSK Invoice, free at hmsk.life" line at the bottom of every invoice
+  // (screen, print, PDF; never in the XRechnung XML). Off here. When enabled, each user can still switch
+  // it off under Backup > Footer line. Used by the hosted copy on hmsk.life (see examples/hosted-config.js).
+  madeWith: { enabled: false, url: 'https://hmsk.life/tools/invoice/' },
 };

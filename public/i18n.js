@@ -62,6 +62,7 @@ const T = {
   availableNote:{ de: '', en: '', pt: 'Os bens/serviços faturados foram colocados à disposição do adquirente na data do documento (Art.º 36.º n.º 5 f) CIVA).' },
   dob:          { de: 'Geburtsdatum', en: 'Date of birth', pt: 'Data de nascimento' },
   smallSender:  { de: 'Kleinunternehmer', en: 'Small business', pt: 'Pequena empresa' },
+  madeWith:     { de: 'Erstellt mit HMSK Invoice, kostenlos auf hmsk.life', en: 'Created with HMSK Invoice, free at hmsk.life', pt: 'Criado com HMSK Invoice, grátis em hmsk.life' },
   notes:        { de: 'Hinweise', en: 'Notes', pt: 'Observações' },
 };
 

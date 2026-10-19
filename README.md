@@ -32,6 +32,16 @@ The mode is picked in `public/config.js`:
 - `storage: 'browser'`: never contacts `api.php` (static hosting).
 - `storage: 'server'`: always login via `api.php`.
 
+### Optional "Created with" footer line
+
+`madeWith` in `public/config.js` adds one small line at the very bottom of every invoice (screen, print and PDF), in the invoice language, as a link: "Created with HMSK Invoice, free at hmsk.life" (DE: "Erstellt mit HMSK Invoice, kostenlos auf hmsk.life", PT: "Criado com HMSK Invoice, grátis em hmsk.life"). It sits in the bottom margin, so it never moves the invoice content, and it is never part of the XRechnung XML.
+
+```js
+madeWith: { enabled: false, url: 'https://hmsk.life/tools/invoice/' },
+```
+
+It is **off** in the default `config.js`, so a self-hosted copy carries no branding. The hosted copy on hmsk.life turns it on (`examples/hosted-config.js`, with a UTM-tagged URL). When it is on, every user can switch it off under *Backup > Footer line* or with the checkbox in the editor; the choice is saved with the other settings (in the browser, or per user on the server). Older data and backups without the setting count as "on".
+
 In browser mode the app starts with fictional demo data (Muster GmbH, Jane Doe Design, …). Remove it under *Backup → Remove demo data* once your own sender is set up.
 
 ## Quick start
@@ -100,7 +110,7 @@ docker/            Apache config + entrypoint for the Docker image
 ```sh
 node tools/render_test.js                               # sample invoices -> test-out/*.pdf (needs Chrome)
 tools/validate-xrechnung.sh                             # XRechnung samples + validation (node, npm, xmllint)
-node tools/e2e_browser.js http://127.0.0.1:8000/        # create -> issue -> print -> XML -> credit note -> backup
+node tools/e2e_browser.js http://127.0.0.1:8000/        # create -> issue -> print -> XML -> credit note -> backup (+ footer opt-out if enabled)
 ```
 
 ## License

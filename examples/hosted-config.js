@@ -7,4 +7,6 @@ window.INVOICE_CONFIG = {
     { href: '/impressum/', text: 'Impressum' },
     { href: '/datenschutz/', text: { en: 'Privacy', de: 'Datenschutz' } },
   ],
+  // "Created with HMSK Invoice, free at hmsk.life" footer line, on by default, users can switch it off.
+  madeWith: { enabled: true, url: 'https://hmsk.life/tools/invoice/?utm_source=invoice&utm_medium=footer&utm_campaign=invoice-made-with' },
 };

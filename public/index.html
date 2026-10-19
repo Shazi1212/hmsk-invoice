@@ -6,7 +6,7 @@
 <meta name="description" content="Free invoices for freelancers and small businesses in Germany and the EU, with the right VAT note picked automatically and XRechnung export.">
 <title>Invoice – free invoice generator with XRechnung export</title>
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="app.css?v=4">
+<link rel="stylesheet" href="app.css?v=5">
 </head>
 <body>
 
@@ -125,6 +125,7 @@
         <label>Intro text <small class="hint">optional, above the items</small><textarea id="f-intro" rows="2"></textarea></label>
         <label>Notes <small class="hint">optional, printed below totals</small><textarea id="f-notes" rows="2"></textarea></label>
         <label class="chk"><input type="checkbox" id="f-showLogo" checked> Show logo</label>
+        <label class="chk made-only" hidden><input type="checkbox" class="mw-toggle"> Show "Created with HMSK Invoice" <small class="hint">on all invoices, helps keep the tool free</small></label>
       </div>
 
       <div class="card checks" id="checks"></div>
@@ -169,6 +170,11 @@
     <h2>Backup</h2>
     <p id="backupText"></p>
     <div class="actions"><button class="btn primary" id="exportJson">Download backup (.json)</button><label class="btn admin-only">Restore from file<input type="file" id="importJson" accept=".json" hidden></label></div>
+    <div class="made-only" hidden>
+      <h2 style="margin-top:28px">Footer line</h2>
+      <label class="chk"><input type="checkbox" class="mw-toggle"> Show "Created with HMSK Invoice" on my invoices</label>
+      <p class="hint">Adds one small line with a link to hmsk.life at the very bottom of the invoice and the PDF. It helps other people find this tool and keeps it free. Untick it to remove the line; it is never part of the XRechnung XML.</p>
+    </div>
     <h2 class="admin-only" style="margin-top:28px">Demo data</h2>
     <p class="hint admin-only">The demo entries (Muster GmbH, Jane Doe Design, …) are fictional. Remove them once you have added your own sender.</p>
     <div class="actions admin-only"><button class="btn" id="demoLoad">Load demo data</button><button class="btn" id="demoRemove">Remove demo data</button><button class="btn ghost danger browser-only" id="wipeLocal">Delete all data in this browser</button></div>
@@ -328,12 +334,12 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="config.js?v=4"></script>
-<script src="i18n.js?v=4"></script>
-<script src="rules.js?v=4"></script>
-<script src="render.js?v=4"></script>
-<script src="xrechnung.js?v=4"></script>
-<script src="demo.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="config.js?v=5"></script>
+<script src="i18n.js?v=5"></script>
+<script src="rules.js?v=5"></script>
+<script src="render.js?v=5"></script>
+<script src="xrechnung.js?v=5"></script>
+<script src="demo.js?v=5"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

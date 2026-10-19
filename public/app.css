@@ -199,6 +199,8 @@ dialog::backdrop { background: rgba(20,20,25,.45); }
 .iv-closing { margin-top: 6mm; }
 .iv-spacer { flex: 1; min-height: 8mm; }
 .iv-foot { display: grid; grid-template-columns: 1.15fr 1fr 1.25fr 1.15fr; gap: 4mm; border-top: .25mm solid #d4d4d0; padding-top: 3mm; font-size: 6.9pt; line-height: 1.45; color: #52525b; break-inside: avoid; }
+.iv-made { position: absolute; left: 20mm; right: 17mm; bottom: 3.5mm; text-align: center; font-size: 6pt; line-height: 1.2; color: #a1a1aa; }
+.iv-made a { color: inherit; text-decoration: none; }
 .iv-watermark { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%) rotate(-28deg); font-size: 64pt; font-weight: 800; color: rgba(0,0,0,.05); letter-spacing: .08em; pointer-events: none; white-space: nowrap; }
 
 /* responsive */
