@@ -113,6 +113,14 @@ tools/validate-xrechnung.sh                             # XRechnung samples + va
 node tools/e2e_browser.js http://127.0.0.1:8000/        # create -> issue -> print -> XML -> credit note -> backup (+ footer opt-out if enabled)
 ```
 
+### Importing line items from another tool
+
+A tool on the same origin can hand over line items: write
+`localStorage['invoice-import'] = JSON.stringify({ source, recipientName, currency, lines: [{ desc, details, qty, unit, price }] })`
+and open the app with `?import=1`. The lines fill an empty draft (or are appended to the current one), a saved party
+with the same name becomes the recipient, and the key is deleted. `recipientName` and `currency` are optional;
+`unit` is one of the keys in `i18n.js` (`h`, `day`, `pc`, ...). The HMSK time tracker uses this.
+
 ## License
 
 MIT © 2026 Hafiz Muhammad Sharoz Khalid. Made for [hmsk.life](https://hmsk.life/tools/invoice/).

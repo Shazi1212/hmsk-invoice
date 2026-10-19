@@ -896,8 +896,29 @@
     try { restored = JSON.parse(localStorage.getItem(draftKey())); } catch {}
     cur = restored && restored.status === 'draft' ? restored : blankInvoice();
     if (!restored) applyDefaults();
+    importLines();
     loadForm(); syncMadeWith();
     setSync(mode === 'local' ? 'Saved in this browser' : 'Synced');
+  }
+
+  // Line items handed over by another tool on the same site (e.g. the time tracker):
+  // localStorage 'invoice-import' = { source, recipientName?, currency?, lines: [{ desc, details, qty, unit, price }] },
+  // read once when the page is opened with ?import.
+  function importLines() {
+    if (!new URLSearchParams(location.search).has('import')) return;
+    history.replaceState(null, '', location.pathname);
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem('invoice-import')); localStorage.removeItem('invoice-import'); } catch {}
+    if (!data || !Array.isArray(data.lines) || !data.lines.length || cur.status !== 'draft') return;
+    const lines = data.lines.map(l => ({ ...blankLine(), desc: String(l.desc || ''), details: String(l.details || ''),
+      qty: +l.qty || 0, unit: UNITS[l.unit] ? l.unit : 'pc', price: +l.price || 0 }));
+    if (cur.lines.some(l => l.desc)) cur.lines.push(...lines); else cur.lines = lines;
+    const name = String(data.recipientName || '').trim().toLowerCase();
+    const r = name && db.parties.find(p => [p.name, p.short].some(v => (v || '').trim().toLowerCase() === name));
+    if (r && !cur.recipientId) cur.recipientId = r.id;
+    if ([...$('#f-currency').options].some(o => o.value === data.currency)) cur.currency = data.currency;
+    applyDefaults(); saveDraftLocal();
+    toast((UI_DE ? `${lines.length} Positionen übernommen` : `${lines.length} lines imported`) + (data.source ? ` (${data.source})` : ''));
   }
 
   function renderTopLinks() {
