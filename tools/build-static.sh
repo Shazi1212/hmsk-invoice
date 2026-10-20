@@ -7,9 +7,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT="${1:?usage: tools/build-static.sh OUTDIR [CONFIG.js]}"
 CFG="${2:-}"
-mkdir -p "$OUT/assets"
-for f in index.html app.css app.js i18n.js rules.js render.js xrechnung.js demo.js; do cp "public/$f" "$OUT/$f"; done
+mkdir -p "$OUT/assets" "$OUT/fonts"
+for f in index.html letterpress.css app.css app.js i18n.js rules.js render.js xrechnung.js demo.js; do cp "public/$f" "$OUT/$f"; done
 cp public/assets/icon.svg "$OUT/assets/icon.svg"
+cp public/fonts/*.woff2 public/fonts/OFL-*.txt "$OUT/fonts/"
 if [[ -n "$CFG" ]]; then cp "$CFG" "$OUT/config.js"; else
   printf '%s\n' "// Static build: browser-only storage." "window.INVOICE_CONFIG = { storage: 'browser', topLinks: [] };" > "$OUT/config.js"
 fi
