@@ -363,6 +363,24 @@
   }
   window.addEventListener('resize', debounce(fitPreview, 100));
 
+  // the sticky top bar and action bar cover the page edges: keep focused or scrolled-to fields clear of them
+  function measureEdges() {
+    const root = document.documentElement.style;
+    root.setProperty('--top-h', $('.top').offsetHeight + 'px');
+    root.setProperty('--bar-h', $('.actions.sticky').offsetHeight + 'px');
+  }
+  if (window.ResizeObserver) {
+    const edges = new ResizeObserver(measureEdges);
+    edges.observe($('.top')); edges.observe($('.actions.sticky'));
+  }
+  // browsers skip the focus scroll when the field is already in the viewport, even if it sits under a bar
+  document.addEventListener('focusin', e => {
+    const bar = $('.actions.sticky'), el = e.target;
+    if (!bar.offsetHeight || !el.closest?.('#view-editor .form') || bar.contains(el)) return;
+    const r = el.getBoundingClientRect();
+    if (r.bottom > bar.getBoundingClientRect().top || r.top < $('.top').getBoundingClientRect().bottom) el.scrollIntoView({ block: 'nearest' });
+  });
+
   // local draft so an unsaved invoice survives a reload
   function saveDraftLocal() { try { if (cur.status === 'draft') localStorage.setItem(draftKey(), JSON.stringify(cur)); } catch {} }
 
