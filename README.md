@@ -69,7 +69,7 @@ cp .env.example .env                      # set INVOICE_ADMIN_PASSWORD (min. 10 
 docker compose up -d                      # http://localhost:8080
 ```
 
-The image is `php:8.3-apache`; data lives in the `invoice-data` volume mounted at `/data`, outside the web root. The first admin user is created from `.env` on the first start. Without a password the container runs in browser mode. *Note: the Dockerfile and compose file have not been run yet (written without Docker available); please report problems.*
+The image is `php:8.3-apache`; data lives in the `invoice-data` volume mounted at `/data`, outside the web root. The first admin user is created from `.env` on the first start. Without a password the container runs in browser mode. The first build takes under a minute; the running container needs about 25 MB of RAM. To use another port, set `INVOICE_PORT` in `.env`.
 
 **Static copy (browser mode only)** for any web space or sub-path:
 
