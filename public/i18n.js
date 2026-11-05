@@ -101,4 +101,12 @@ function makeL(lang) {
   return L;
 }
 
-window.I18N = { T, UNITS, LANGS, makeL };
+// UI texts (app chrome, not invoice content). DE/EN by browser language.
+const UI = {
+  setupCard:      { de: 'Sie wollen es nicht selbst einrichten? Ich richte Invoice in einer Sitzung mit Ihnen ein: Kunden importiert, erste echte XRechnung erstellt und mit dem offiziellen KoSIT-Validator geprüft. Gründerpreis 149 €, 20 Plätze.',
+                    en: 'Rather not set it up yourself? I set up Invoice with you in one session: clients imported, first real XRechnung created and checked with the official KoSIT validator. Founding price €149, 20 seats.' },
+  setupCardMore:  { de: 'Mehr dazu', en: 'More' },
+  setupCardClose: { de: 'Ausblenden', en: 'Dismiss' },
+};
+
+window.I18N = { T, UNITS, LANGS, UI, makeL };

@@ -14,4 +14,10 @@ window.INVOICE_CONFIG = {
   // (screen, print, PDF; never in the XRechnung XML). Off here. When enabled, each user can still switch
   // it off under Backup > Footer line. Used by the hosted copy on hmsk.life (see examples/hosted-config.js).
   madeWith: { enabled: false, url: 'https://hmsk.life/tools/invoice/' },
+
+  // Optional small card below the A4 preview after the first result (issue, print, XRechnung or draft save), offering
+  // the paid done-with-you setup from hmsk.life. Shown once per browser, dismissible, never in print, PDF or the XML.
+  // Off here. Used by the hosted copy on hmsk.life (see examples/hosted-config.js). `url` can be one address or
+  // { de, en } by UI language.
+  setupCard: { enabled: false, url: { de: 'https://hmsk.life/de/tools/invoice/setup/', en: 'https://hmsk.life/tools/invoice/setup/' } },
 };

@@ -9,4 +9,8 @@ window.INVOICE_CONFIG = {
   ],
   // "Created with HMSK Invoice, free at hmsk.life" footer line, on by default, users can switch it off.
   madeWith: { enabled: true, url: 'https://hmsk.life/tools/invoice/?utm_source=invoice&utm_medium=footer&utm_campaign=invoice-made-with' },
+  // Goal-4 test "E-Rechnung-Ready in 1 Tag" (hmsk.life docs/research/hormozi-invoice/TEST-PLAN.md): card after the first result.
+  setupCard: { enabled: true, url: {
+    de: 'https://hmsk.life/de/tools/invoice/setup/?utm_source=invoice&utm_medium=card&utm_campaign=invoice-setup-test',
+    en: 'https://hmsk.life/tools/invoice/setup/?utm_source=invoice&utm_medium=card&utm_campaign=invoice-setup-test' } },
 };

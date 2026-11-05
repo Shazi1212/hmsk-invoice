@@ -1,7 +1,7 @@
 // End-to-end test of the browser mode in headless Chrome (no extra npm packages; uses the
 // Chrome DevTools Protocol over Node's built-in WebSocket, Node >= 22).
-//   node tools/e2e_browser.js http://127.0.0.1:8000/ [--screenshot shot.png] [--pdf out.pdf] [--xml out.xml]
-// Flow: fresh profile -> demo data -> pick client -> add catalogue item -> issue -> PDF (print) ->
+//   node tools/e2e_browser.js http://127.0.0.1:8000/ [--screenshot shot.png] [--screenshot-card card.png] [--pdf out.pdf] [--xml out.xml]
+// Flow: fresh profile -> demo data -> pick client -> add catalogue item -> issue -> setup card (when config enables it) -> PDF (print) ->
 // XRechnung XML -> credit note -> backup export -> "Created with" footer line opt-out (when config enables it). Fails (exit 1) when a step does not work.
 const fs = require('fs');
 const os = require('os');
@@ -83,9 +83,27 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       console.log('    screenshot -> ' + arg('--screenshot'));
     }
 
+    const scOn = await evaluate(`return !!(window.INVOICE_CONFIG.setupCard && window.INVOICE_CONFIG.setupCard.enabled)`);
+    const card = () => evaluate(`const c = document.querySelector('#setupCard'); const a = c && c.querySelector('a'); return c && !c.hidden ? { href: a && a.getAttribute('href'), text: c.textContent.trim() } : null`);
+    ok(!(await card()), 'no setup card before the first result');
     await evaluate(`document.querySelector('#issueInv').click(); await new Promise(r => setTimeout(r, 400));`);
     const issued = await evaluate(`const d = JSON.parse(localStorage.getItem('invoice-db')); return d.invoices.map(i => i.number + ':' + i.status)`);
     ok(issued.length === 1 && /:issued$/.test(issued[0]), 'issued and stored in localStorage: ' + issued[0]);
+    const sc = await card();
+    ok(scOn ? !!sc && /^https?:\/\//.test(sc.href) : !sc,
+      scOn ? `setup card shown after the first result -> ${sc?.href}` : 'no setup card (setupCard off in config)');
+    if (scOn) {
+      ok(sc.text.length > 40 && /149/.test(sc.text), 'setup card carries the offer text');
+      if (arg('--screenshot-card')) {
+        await sleep(2800);  // toast gone, nudge scroll done
+        const shot = await send('Page.captureScreenshot', { format: 'png' });
+        fs.writeFileSync(arg('--screenshot-card'), Buffer.from(shot.data, 'base64'));
+        console.log('    screenshot -> ' + arg('--screenshot-card'));
+      }
+      await evaluate(`document.querySelector('#setupCardClose').click(); await new Promise(r => setTimeout(r, 100));`);
+      const gone = await evaluate(`return { hidden: document.querySelector('#setupCard').hidden, flag: localStorage.getItem('invoice-setup-card') || '' }`);
+      ok(gone.hidden && /^dismissed/.test(gone.flag), 'dismissing the card hides it and remembers that in localStorage');
+    }
 
     await evaluate(`document.querySelector('#printInv').click(); await new Promise(r => setTimeout(r, 300));`);
     ok(await evaluate(`return window.__printed`) === 1, 'PDF / Print opens the print dialog');
@@ -124,6 +142,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
         set('#f-sender', 'demo-muster'); set('#f-recipient', 'demo-beispiel'); await new Promise(r => setTimeout(r, 300));`);
       const after = await evaluate(`return { saved: JSON.parse(localStorage.getItem('invoice-db')).settings.showMadeWith, box: document.querySelector('#view-settings .mw-toggle').checked, sheet: !!document.querySelector('#sheet .iv'), line: !!document.querySelector('#sheet .iv-made') }`);
       ok(after.saved === false && !after.box && after.sheet && !after.line, 'opt-out is saved and survives a reload');
+      if (scOn) {
+        await evaluate(`document.querySelector('#issueInv').click(); await new Promise(r => setTimeout(r, 400));`);
+        ok(!(await card()), 'setup card does not come back after a reload (once per browser)');
+      }
       await evaluate(`const c = document.querySelector('#view-settings .mw-toggle'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 300));`);
       ok(!!(await mwLine()), 'ticking it again brings the line back');
     }

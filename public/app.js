@@ -16,10 +16,18 @@
   const SERIES_PREFIX = { proforma: 'PF', quote: 'AN', credit_note: 'RK', self_billing: 'GS' };
 
   // ---------------------------------------------------------------- storage
-  const CONFIG = Object.assign({ storage: 'auto', topLinks: [], madeWith: null }, window.INVOICE_CONFIG || {});
+  const CONFIG = Object.assign({ storage: 'auto', topLinks: [], madeWith: null, setupCard: null }, window.INVOICE_CONFIG || {});
   // optional "Created with HMSK Invoice" footer line (config.js: madeWith.enabled); each user can switch it off
   const MADE_WITH = CONFIG.madeWith && CONFIG.madeWith.enabled && /^https?:\/\//i.test(CONFIG.madeWith.url || '') ? { url: CONFIG.madeWith.url } : null;
   const UI_DE = /^de\b/i.test(navigator.language || '');
+  // optional card offering the paid done-with-you setup (config.js: setupCard.enabled), hosted copy only
+  const SETUP_CARD = (() => {
+    const c = CONFIG.setupCard;
+    if (!c || !c.enabled) return null;
+    const url = typeof c.url === 'string' ? c.url : (c.url && (UI_DE ? c.url.de : c.url.en)) || '';
+    return /^https?:\/\//i.test(url) ? { url } : null;
+  })();
+  const SETUP_KEY = 'invoice-setup-card';
   const DB_KEY = 'invoice-db';
   let db = { rev: 0, parties: [], items: [], invoices: [], settings: {} };
   let mode = 'api'; // 'api' = server mode, 'local' = browser mode (localStorage)
@@ -111,6 +119,26 @@
     const t = $('#toast');
     t.textContent = msg; t.classList.toggle('err', !!err); t.classList.add('on');
     clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), err ? 6000 : 2600);
+  }
+
+  // Setup card: below the A4 preview, only after a result (issue, print, XRechnung, draft save), never before it and
+  // never in print, PDF or XML. Once per browser: localStorage remembers that it was shown or dismissed.
+  function offerSetupCard() {
+    if (!SETUP_CARD) return;
+    try { if (localStorage.getItem(SETUP_KEY)) return; localStorage.setItem(SETUP_KEY, 'shown ' + today()); } catch { return; }
+    const t = k => I18N.UI[k][UI_DE ? 'de' : 'en'];
+    const el = $('#setupCard');
+    el.innerHTML = `<p>${esc(t('setupCard'))}</p><div class="setup-card-actions">` +
+      `<a class="btn sm primary" href="${esc(SETUP_CARD.url)}" target="_blank" rel="noopener">${esc(t('setupCardMore'))}</a>` +
+      `<button type="button" class="btn sm ghost" id="setupCardClose">${esc(t('setupCardClose'))}</button></div>`;
+    el.hidden = false;
+    $('.preview-wrap').classList.add('has-card');
+    // the sticky preview can leave the card half below the fold: nudge it in, but never jump to it from the form
+    requestAnimationFrame(() => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > innerHeight) window.scrollBy({ top: r.bottom - innerHeight + 12, behavior: 'smooth' }); });
+    $('#setupCardClose').onclick = () => {
+      el.hidden = true; $('.preview-wrap').classList.remove('has-card');
+      try { localStorage.setItem(SETUP_KEY, 'dismissed ' + today()); } catch {}
+    };
   }
 
   // Invoice language: the sender's default language if set, otherwise the browser language (DE/EN).
@@ -509,7 +537,7 @@
     if (i >= 0) db.invoices[i] = rec; else db.invoices.push(rec);
     cur = rec;
     persist();
-    if (status === 'draft') { toast('Draft saved'); update(); }
+    if (status === 'draft') { toast('Draft saved'); update(); offerSetupCard(); }
     return true;
   }
 
@@ -547,6 +575,7 @@
     localStorage.removeItem(draftKey());
     loadForm();
     toast(`${DOC_LABEL[cur.docType]} ${cur.number} issued and saved`);
+    offerSetupCard();
     return true;
   }
 
@@ -565,6 +594,7 @@
     const old = document.title;
     document.title = `${cur.number || 'draft'} ${r ? partyLabel(r) : ''}`.replace(/[\/\\:*?"<>|]/g, '-');
     setTimeout(() => { window.print(); document.title = old; }, 80);
+    offerSetupCard();
   }
 
   // ---------------------------------------------------------------- XRechnung export
@@ -583,6 +613,7 @@
     if (problems.length) { toast('XRechnung not possible yet: ' + problems.map(p => p.msg).join(' '), true); return false; }
     download(XRechnung.fileName(inv), XRechnung.build(inv, s, r), 'application/xml');
     toast(`XRechnung ${inv.number} downloaded`);
+    offerSetupCard();
     return true;
   }
   async function downloadXml() {

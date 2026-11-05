@@ -44,6 +44,16 @@ It is **off** in the default `config.js`, so a self-hosted copy carries no brand
 
 In browser mode the app starts with fictional demo data (Muster GmbH, Jane Doe Design, …). Remove it under *Backup → Remove demo data* once your own sender is set up.
 
+### Optional setup-offer card
+
+`setupCard` in `public/config.js` shows one small, dismissible card below the A4 preview after the first result (issue, print, XRechnung export or draft save), pointing to the paid done-with-you setup on hmsk.life. It is shown once per browser (localStorage remembers it), never before a result, and never in print, PDF or the XRechnung XML.
+
+```js
+setupCard: { enabled: false, url: { de: 'https://hmsk.life/de/tools/invoice/setup/', en: 'https://hmsk.life/tools/invoice/setup/' } },
+```
+
+It is **off** in the default `config.js`, so a self-hosted copy never shows it. The hosted copy on hmsk.life turns it on (`examples/hosted-config.js`, with UTM-tagged URLs). `url` is one address or `{ de, en }` picked by the browser language; the texts are in `public/i18n.js` (`UI.setupCard`).
+
 ## Quick start
 
 **Browser mode, no install (PHP or Python):**
