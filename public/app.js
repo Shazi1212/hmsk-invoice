@@ -46,6 +46,7 @@
   }
 
   let me = { user: 'local', role: 'admin' };
+  let firstVisit = false;
   const isAdmin = () => me.role === 'admin';
 
   function setDb(data) {
@@ -61,6 +62,7 @@
       else {
         // first visit: start with the fictional demo data so the tool can be tried right away
         setDb({ rev: 0, parties: clone(window.DEMO?.parties || []), items: clone(window.DEMO?.items || []), invoices: [], settings: { lastSender: 'demo-muster' } });
+        firstVisit = true;
         try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch {}
       }
       return;
@@ -261,6 +263,7 @@
   }
 
   // ---------------------------------------------------------------- editor UI
+  const NEW = '__new__';   // option value of the "＋ New …" entries in the drop-downs
   function fillSelect(sel, options, value) {
     sel.innerHTML = options.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
     sel.value = value ?? '';
@@ -268,11 +271,12 @@
 
   function refreshPartySelects() {
     const opts = [['', '— choose —'], ...partiesSorted().map(p => [p.id, `${partyLabel(p)} · ${p.country}${p.kind === 'freelancer' ? ' · freelancer' : p.kind === 'private' ? ' · private' : ''}${p.billing === 'monthly' && p.clientCode ? ' · monthly ' + p.clientCode : ''}`])];
-    fillSelect($('#f-sender'), opts, cur.senderId);
-    fillSelect($('#f-recipient'), opts, cur.recipientId);
+    fillSelect($('#f-sender'), [...opts, [NEW, UI_DE ? '＋ Neuer Absender…' : '＋ New sender…']], cur.senderId);
+    fillSelect($('#f-recipient'), [...opts, [NEW, UI_DE ? '＋ Neuer Kunde…' : '＋ New client…']], cur.recipientId);
   }
   function refreshCatalogue() {
-    fillSelect($('#f-catalogue'), [['', '＋ Add from catalogue…'], ...db.items.map(i => [i.id, `${i.desc} · ${money(+i.price || 0, cur.currency, 'de')}`])], '');
+    fillSelect($('#f-catalogue'), [['', '＋ Add from catalogue…'], ...db.items.map(i => [i.id, `${i.desc} · ${money(+i.price || 0, cur.currency, 'de')}`]),
+      [NEW, UI_DE ? '＋ Neuer Katalogeintrag…' : '＋ New catalogue item…']], '');
   }
   function refreshTemplates() {
     const list = [...db.invoices].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -464,6 +468,7 @@
     if (!id || e.type === 'input' && el.tagName === 'SELECT') return;
     switch (id) {
       case 'sender': case 'recipient':
+        if (el.value === NEW) { el.value = cur[id + 'Id'] || ''; openParty(null, id); return; }
         cur[id + 'Id'] = el.value;
         if (id === 'sender') { db.settings.lastSender = el.value; cur.numberManual = false; persist(); }
         if (id === 'recipient') { cur.numberManual = false; applyMonthlyClient(); }
@@ -485,6 +490,7 @@
       case 'showDiscount': cur.showDiscount = el.checked; renderLines(); break;
       case 'showLogo': cur.showLogo = el.checked; break;
       case 'catalogue': {
+        if (el.value === NEW) { el.value = ''; openItem(null, true); break; }
         const it = db.items.find(x => x.id === el.value);
         if (it) {
           const empty = cur.lines.length === 1 && !cur.lines[0].desc;
@@ -816,7 +822,7 @@
   }
 
   // ---------------------------------------------------------------- catalogue
-  let editingItem = null;
+  let editingItem = null, itemToInvoice = false, openItem = () => {};
   function renderItems() {
     $('#itemTable').innerHTML = `<thead><tr><th>Description</th><th>Details</th><th>Unit</th><th class="num">Price</th><th></th></tr></thead><tbody>` +
       (db.items.map(i => `<tr data-id="${i.id}"><td><strong>${esc(i.desc)}</strong></td><td>${esc(i.details || '')}</td><td>${esc(UNITS[i.unit]?.en || i.unit)}</td><td class="num">${money(+i.price || 0, 'EUR', 'de')}</td><td><button class="btn sm" data-edit>Edit</button></td></tr>`).join('')
@@ -824,14 +830,15 @@
   }
   function bindItems() {
     $$('.unit-select').forEach(s => s.innerHTML = Object.entries(UNITS).map(([k, v]) => `<option value="${k}">${v.en} · ${v.de}</option>`).join(''));
-    const open = it => {
-      editingItem = it;
+    const open = openItem = (it, toInvoice) => {
+      editingItem = it; itemToInvoice = !!toInvoice;
       const f = $('#itemForm'); f.reset();
       for (const el of f.elements) if (el.name) el.value = it?.[el.name] ?? (el.name === 'unit' ? 'pc' : '');
       $('#itemDelete').hidden = !it;
       $('#itemDlg').showModal();
     };
     $('#newItem').onclick = () => open(null);
+    $('#itemDlg').addEventListener('close', () => { itemToInvoice = false; });
     $('#itemTable').onclick = e => { if (e.target.closest('[data-edit]')) open(db.items.find(i => i.id === e.target.closest('tr').dataset.id)); };
     $('#itemCancel').onclick = () => $('#itemDlg').close();
     $('#itemDelete').onclick = () => { db.items = db.items.filter(i => i !== editingItem); markDeleted('items', editingItem.id); persist(); $('#itemDlg').close(); renderItems(); refreshCatalogue(); };
@@ -842,6 +849,11 @@
       touch(it);
       if (!editingItem) db.items.push(it);
       persist(); $('#itemDlg').close(); renderItems(); refreshCatalogue();
+      if (itemToInvoice && !editingItem && cur.status === 'draft') {
+        const l = { ...blankLine(), desc: it.desc, details: it.details || '', unit: it.unit || 'pc', price: +it.price || 0, code: it.code || '' };
+        if (cur.lines.length === 1 && !cur.lines[0].desc) cur.lines[0] = l; else cur.lines.push(l);
+        applyDefaults(); renderLines(); update();
+      }
     };
   }
 
@@ -944,10 +956,24 @@
     let restored = null;
     try { restored = JSON.parse(localStorage.getItem(draftKey())); } catch {}
     cur = restored && restored.status === 'draft' ? restored : blankInvoice();
+    if (!restored && firstVisit) exampleInvoice();
     if (!restored) applyDefaults();
     importLines();
     loadForm(); syncMadeWith();
     setSync(mode === 'local' ? 'Saved in this browser' : 'Synced');
+  }
+
+  // First visit only: open on a finished example (fictional demo sender, client and items), so the preview shows a
+  // real invoice and PDF / Print works on the first click. Nothing here is real; "New" starts a blank one.
+  function exampleInvoice() {
+    if (!party('demo-beispiel') || cur.senderId !== 'demo-muster') return;
+    cur.recipientId = 'demo-beispiel';
+    const it = id => db.items.find(i => i.id === id);
+    const line = (id, qty) => { const i = it(id); return i && { ...blankLine(), desc: i.desc, details: i.details || '', unit: i.unit || 'pc', price: +i.price || 0, qty }; };
+    const lines = [line('demo-item-web', 12), line('demo-item-hosting', 1)].filter(Boolean);
+    if (lines.length) cur.lines = lines;
+    setTimeout(() => toast(UI_DE ? 'Beispielrechnung mit erfundenen Daten. Wählen Sie Ihren Absender und Kunden oder klicken Sie „New“.'
+      : 'Example invoice with made-up data. Pick your own sender and client, or click New.'), 600);
   }
 
   // Line items handed over by another tool on the same site (e.g. the time tracker):

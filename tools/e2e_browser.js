@@ -53,10 +53,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await sleep(1500);
 
     console.log('E2E ' + url);
-    const boot = await evaluate(`return { app: !document.querySelector('#app').hidden, note: document.querySelector('#localNote').hidden ? '' : document.querySelector('#localNoteText').textContent, parties: document.querySelectorAll('#f-sender option').length - 1, strip: [...document.querySelectorAll('#siteStrip a')].map(a => a.getAttribute('href')) }`);
+    const boot = await evaluate(`return { app: !document.querySelector('#app').hidden, note: document.querySelector('#localNote').hidden ? '' : document.querySelector('#localNoteText').textContent, parties: [...document.querySelectorAll('#f-sender option')].filter(o => o.value && o.value !== '__new__').length, example: { rec: document.querySelector('#f-recipient').value, lines: document.querySelectorAll('#lines .line').length, sheet: document.querySelector('#sheet').innerText.includes('Beispiel AG') }, newOpts: ['#f-sender', '#f-recipient', '#f-catalogue'].every(s => [...document.querySelector(s).options].some(o => o.value === '__new__')), strip: [...document.querySelectorAll('#siteStrip a')].map(a => a.getAttribute('href')) }`);
     ok(boot.app, 'app starts without login (browser mode)');
     ok(/localStorage/.test(boot.note), 'privacy note visible: ' + boot.note);
     ok(boot.parties >= 1, `demo data loaded (${boot.parties} parties)`);
+    ok(boot.example.rec === 'demo-beispiel' && boot.example.lines === 2 && boot.example.sheet, 'first visit opens on a filled example invoice');
+    ok(boot.newOpts, '"＋ New …" entry in the sender, client and catalogue drop-downs');
     console.log('    strip links: ' + (boot.strip.join(', ') || '(none)'));
 
     // capture downloads, auto-confirm dialogs, count print calls
@@ -64,6 +66,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       HTMLAnchorElement.prototype.click = function () { window.__dl.push('NAME:' + this.download); };
       window.confirm = () => true; window.__printed = 0; window.print = () => { window.__printed++; };`);
     await evaluate(`const set = (s, v) => { const e = document.querySelector(s); e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); };
+      document.querySelector('#newInv').click(); await new Promise(r => setTimeout(r, 150));
       set('#f-sender', 'demo-muster'); await new Promise(r => setTimeout(r, 150));
       set('#f-recipient', 'demo-beispiel'); await new Promise(r => setTimeout(r, 150));
       set('#f-catalogue', 'demo-item-web'); await new Promise(r => setTimeout(r, 150));

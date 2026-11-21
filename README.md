@@ -42,7 +42,7 @@ madeWith: { enabled: false, url: 'https://hmsk.life/tools/invoice/' },
 
 It is **off** in the default `config.js`, so a self-hosted copy carries no branding. The hosted copy on hmsk.life turns it on (`examples/hosted-config.js`, with a UTM-tagged URL). When it is on, every user can switch it off under *Backup > Footer line* or with the checkbox in the editor; the choice is saved with the other settings (in the browser, or per user on the server). Older data and backups without the setting count as "on".
 
-In browser mode the app starts with fictional demo data (Muster GmbH, Jane Doe Design, …). Remove it under *Backup → Remove demo data* once your own sender is set up.
+In browser mode the app starts with fictional demo data (Muster GmbH, Jane Doe Design, …) and, on the very first visit, opens on a filled example invoice so the preview and PDF / Print work right away; *New* starts a blank one. The sender, client and catalogue drop-downs end with a "＋ New …" entry. Remove it under *Backup → Remove demo data* once your own sender is set up.
 
 ### Optional setup-offer card
 
